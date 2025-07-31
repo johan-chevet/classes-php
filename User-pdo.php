@@ -1,5 +1,5 @@
 <?php
-class User
+class Userpdo
 {
     private $id;
     public $login;
@@ -7,16 +7,12 @@ class User
     public $firstname;
     public $lastname;
 
-    private $mysqli;
+    private $dbh;
 
     public function __construct()
     {
-        $this->mysqli = new mysqli("localhost", "root", "", "classes");
-    }
-
-    public function __destruct()
-    {
-        $this->mysqli->close();
+        $this->dbh = new PDO("mysql:host=localhost;dbname=classes", "root", "");;
+        $this->dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
     public function register(
@@ -27,24 +23,33 @@ class User
         string $lastname
     ) {
         try {
-            $exist = $this->mysqli->query("SELECT id FROM utilisateurs WHERE login='$login'");
-            if ($exist->num_rows > 0) {
+            $exist = $this->dbh->prepare("SELECT id FROM utilisateurs WHERE login=?");
+            $exist->execute([$login]);
+            if ($exist->rowCount() > 0) {
                 echo "Login '$login' already taken";
                 return;
             }
-            $this->mysqli->query("INSERT INTO utilisateurs (login, password, email, firstname, lastname)
-             VALUES ('$login', '$password', '$email', '$firstname', '$lastname')");
-            return [$this->mysqli->insert_id, $login, $email, $firstname, $lastname];
-        } catch (mysqli_sql_exception $e) {
+            $stmt = $this->dbh->prepare("INSERT INTO utilisateurs (login, password, email, firstname, lastname)
+             VALUES (:login, :password, :email, :firstname, :lastname)");
+            $stmt->bindParam("login", $login);
+            $stmt->bindParam("password", $password);
+            $stmt->bindParam("email", $email);
+            $stmt->bindParam("firstname", $firstname);
+            $stmt->bindParam("lastname", $lastname);
+            $stmt->execute();
+            return [$this->dbh->lastInsertId(), $login, $email, $firstname, $lastname];
+        } catch (PDOException $e) {
             echo $e->getMessage();
         }
     }
 
     public function connect(string $login, string $password)
     {
-        $data = $this->mysqli->query("SELECT * FROM utilisateurs WHERE login='$login' AND password='$password' LIMIT 1");
-        if ($data->num_rows > 0) {
-            $user = $data->fetch_assoc();
+        $stmt = $this->dbh->prepare("SELECT * FROM utilisateurs WHERE login=? AND password=? LIMIT 1");
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $stmt->execute([$login, $password]);
+        if ($stmt->rowCount() > 0) {
+            $user = $stmt->fetch();
             $this->id = $user["id"];
             $this->login = $user["login"];
             $this->email = $user["email"];
@@ -61,7 +66,8 @@ class User
     public function delete()
     {
         if ($this->isConnected()) {
-            $this->mysqli->query("DELETE FROM utilisateurs WHERE id=$this->id");
+            $stmt = $this->dbh->prepare("DELETE FROM utilisateurs WHERE id=:id");
+            $stmt->execute([$this->id]);
             $this->disconnect();
         }
     }
@@ -74,9 +80,11 @@ class User
         string $lastname
     ) {
         if ($this->isConnected()) {
-            $updated = $this->mysqli->query("UPDATE utilisateurs SET 
-            login='$login', password='$password', email='$email',
-            firstname='$firstname', lastname='$lastname' WHERE id='$this->id'");
+            $stmt = $this->dbh->prepare("UPDATE utilisateurs SET 
+            login=?, password=?, email=?,
+            firstname=?, lastname=? WHERE id=?");
+            $updated = $stmt->execute([$login, $password, $email, $firstname, $lastname, $this->id]);
+            var_dump($updated);
             if ($updated) {
                 $this->login = $login;
                 $this->email = $email;
@@ -115,24 +123,10 @@ class User
     {
         return $this->lastname;
     }
-
-    private function fetchUser(int $id)
-    {
-        try {
-            var_dump($id);
-            $data = $this->mysqli->query("SELECT id, login, email, firstname, lastname FROM utilisateurs WHERE id=$id");
-            return $data->fetch_assoc();
-        } catch (mysqli_sql_exception $e) {
-            echo $e->getMessage();
-            return [];
-        }
-    }
 }
 
-$user = new User();
-$test = $user->register("test", "test", "email", "prenom", "nom");
-var_dump($test);
-// $user->connect("test", "test");
-// $user->update("karim", "zennoune", "karim@zennoune.fr", "pierre", "karim");
-// $user->delete();
-// var_dump($users);
+$user = new Userpdo();
+// $test = $user->register("test5", "test", "email", "prenom", "nom");
+$user->connect("test4", "test");
+$user->update("pierre", "mdp", "email@", "pier", "re");
+var_dump($user);
