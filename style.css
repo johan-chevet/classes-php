@@ -1,0 +1,19 @@
+.btn-class {
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+
+#classes {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+
+.active {
+  background-color: rgba(14, 148, 201, 0.5);
+}
+
+.errors {
+  color: red;
+}

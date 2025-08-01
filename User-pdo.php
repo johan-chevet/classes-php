@@ -84,7 +84,6 @@ class Userpdo
             login=?, password=?, email=?,
             firstname=?, lastname=? WHERE id=?");
             $updated = $stmt->execute([$login, $password, $email, $firstname, $lastname, $this->id]);
-            var_dump($updated);
             if ($updated) {
                 $this->login = $login;
                 $this->email = $email;
@@ -124,9 +123,3 @@ class Userpdo
         return $this->lastname;
     }
 }
-
-$user = new Userpdo();
-// $test = $user->register("test5", "test", "email", "prenom", "nom");
-$user->connect("test4", "test");
-$user->update("pierre", "mdp", "email@", "pier", "re");
-var_dump($user);

@@ -14,11 +14,6 @@ class User
         $this->mysqli = new mysqli("localhost", "root", "", "classes");
     }
 
-    public function __destruct()
-    {
-        $this->mysqli->close();
-    }
-
     public function register(
         string $login,
         string $password,
@@ -29,8 +24,7 @@ class User
         try {
             $exist = $this->mysqli->query("SELECT id FROM utilisateurs WHERE login='$login'");
             if ($exist->num_rows > 0) {
-                echo "Login '$login' already taken";
-                return;
+                return ["Login '$login' already taken"];
             }
             $this->mysqli->query("INSERT INTO utilisateurs (login, password, email, firstname, lastname)
              VALUES ('$login', '$password', '$email', '$firstname', '$lastname')");
@@ -115,24 +109,4 @@ class User
     {
         return $this->lastname;
     }
-
-    private function fetchUser(int $id)
-    {
-        try {
-            var_dump($id);
-            $data = $this->mysqli->query("SELECT id, login, email, firstname, lastname FROM utilisateurs WHERE id=$id");
-            return $data->fetch_assoc();
-        } catch (mysqli_sql_exception $e) {
-            echo $e->getMessage();
-            return [];
-        }
-    }
 }
-
-$user = new User();
-$test = $user->register("test", "test", "email", "prenom", "nom");
-var_dump($test);
-// $user->connect("test", "test");
-// $user->update("karim", "zennoune", "karim@zennoune.fr", "pierre", "karim");
-// $user->delete();
-// var_dump($users);
